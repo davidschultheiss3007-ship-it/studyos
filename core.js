@@ -596,13 +596,77 @@ const Views = (() => {
 
   /* ─ Lernbereich ─ */
   let _q = null;
+  const _learnTopicToModule = new Map(
+    MODULES.flatMap(mod => mod.topics.map(topic => [topic.id, mod.id]))
+  );
+
+  function getLearnModuleFromStore() {
+    const stored = Store.get('learn.module', 'all');
+    return stored === 'all' || MODULES.some(m => m.id === stored) ? stored : 'all';
+  }
+
+  function getTopicsForLearnModule(moduleId) {
+    if (moduleId === 'all') return MODULES.flatMap(mod => mod.topics);
+    return MODULES.find(mod => mod.id === moduleId)?.topics || [];
+  }
+
+  function getFilteredQuestions(moduleId, topicId, typeId) {
+    const byModule = QUESTIONS.filter(q => moduleId === 'all' || _learnTopicToModule.get(q.topic) === moduleId);
+    const byTopic = byModule.filter(q => topicId === 'all' || q.topic === topicId);
+    const byType = byTopic.filter(q => q.type === typeId);
+    return byType.length ? byType : byTopic;
+  }
+
+  function renderLearnTopicOptions(moduleId, selectedTopic = 'all') {
+    const select = U.$('#lTopic');
+    if (!select) return;
+    const topics = getTopicsForLearnModule(moduleId);
+    const validTopic = selectedTopic === 'all' || topics.some(t => t.id === selectedTopic) ? selectedTopic : 'all';
+    select.innerHTML = [
+      `<option value="all">Alle Themen</option>`,
+      ...topics.map(t => `<option value="${t.id}">${U.esc(t.title)}</option>`)
+    ].join('');
+    select.value = validTopic;
+  }
+
+  function setLearnModule(moduleId) {
+    const current = moduleId === 'all' || MODULES.some(m => m.id === moduleId) ? moduleId : 'all';
+    Store.set('learn.module', current);
+    U.$$('#lModules [data-module]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.module === current));
+    renderLearnTopicOptions(current, U.$('#lTopic')?.value || 'all');
+  }
+
+  function renderLearnEmptyState(moduleId) {
+    _q = null;
+    const moduleLabel = moduleId === 'all'
+      ? 'alle Module'
+      : MODULES.find(m => m.id === moduleId)?.title || 'das gewählte Modul';
+    U.$('#lTag').textContent = 'Keine Fragen gefunden';
+    U.$('#lQ').textContent = `Für ${moduleLabel} sind aktuell keine passenden Fragen vorhanden.`;
+    U.$('#lA').innerHTML = '';
+    U.$('#lFb').innerHTML = 'Bitte wähle ein anderes Thema oder einen anderen Aufgabentyp.';
+  }
+
+  function renderLearnIdleState() {
+    _q = null;
+    U.$('#lTag').textContent = 'Bereit';
+    U.$('#lQ').textContent = 'Klicke auf „Neue Frage", um zu beginnen.';
+    U.$('#lA').innerHTML = '';
+    U.$('#lFb').innerHTML = '';
+  }
+
   function learn() {
     App.setActiveNav('learn');
     App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: 'Lernbereich' }]);
 
-    const opts = [
+    const selectedModule = getLearnModuleFromStore();
+    const moduleButtons = [
+      `<button class="learn-module-chip${selectedModule === 'all' ? ' is-active' : ''}" data-module="all">Alle Module</button>`,
+      ...MODULES.map(mod => `<button class="learn-module-chip${selectedModule === mod.id ? ' is-active' : ''}" data-module="${mod.id}">${U.esc(mod.title)}</button>`)
+    ].join('');
+    const topicOptions = [
       `<option value="all">Alle Themen</option>`,
-      ...MODULES.flatMap(m => m.topics.map(t => `<option value="${t.id}">${U.esc(t.title)}</option>`))
+      ...getTopicsForLearnModule(selectedModule).map(t => `<option value="${t.id}">${U.esc(t.title)}</option>`)
     ].join('');
 
     render(`
@@ -612,8 +676,9 @@ const Views = (() => {
         <p class="hero__lead">Wähle Thema und Aufgabentyp. Die App generiert Fragen aus den integrierten Inhalten.</p>
       </section>
       <div class="learn-card">
+        <div class="learn-modules" id="lModules">${moduleButtons}</div>
         <div class="learn-controls">
-          <select id="lTopic" class="ls">${opts}</select>
+          <select id="lTopic" class="ls">${topicOptions}</select>
           <select id="lType" class="ls">
             <option value="quiz">Quiz</option>
             <option value="task">Rechenaufgabe</option>
@@ -631,11 +696,19 @@ const Views = (() => {
 
     if (!U.$('#s-learn')) {
       const s = document.createElement('style'); s.id = 's-learn';
-      s.textContent = `.learn-card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--sp-6);margin-top:var(--sp-6);box-shadow:var(--shadow-sm)}html[data-theme=light] .learn-card{background:#fff}.learn-controls{display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-5)}.ls{height:42px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:12px;padding:0 12px;cursor:pointer;font-size:14px}html[data-theme=light] .ls{background:#fff}.ls:focus{outline:2px solid var(--acc-1);outline-offset:2px}.learn-tag{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:var(--sp-3)}.learn-q{font-size:20px;line-height:1.45;letter-spacing:-.02em;font-weight:550;margin:var(--sp-3) 0 var(--sp-4);color:var(--text)}.learn-a{display:grid;gap:var(--sp-3)}.qa{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:14px;padding:13px 15px;text-align:left;cursor:pointer;font-size:14.5px;transition:all var(--dur-1) var(--ease-out);width:100%;font-weight:500}html[data-theme=light] .qa{background:#f7f9fd}.qa:hover{border-color:var(--acc-1);transform:translateX(2px)}.qa.correct{border-color:var(--ok);background:var(--ok-soft)}.qa.wrong{border-color:var(--bad);background:var(--bad-soft)}.qh{filter:blur(7px);user-select:none;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:13px 15px;color:var(--text);transition:filter var(--dur-2) var(--ease-out);cursor:pointer}.qh.show{filter:none;cursor:default}.learn-fb{margin-top:var(--sp-4);color:var(--text-2);line-height:1.6;font-size:14.5px;min-height:24px}.learn-fb strong{color:var(--text)}`;
+      s.textContent = `.learn-card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--sp-6);margin-top:var(--sp-6);box-shadow:var(--shadow-sm)}html[data-theme=light] .learn-card{background:#fff}.learn-modules{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}.learn-module-chip{height:36px;border:1px solid var(--line);background:rgba(255,255,255,.025);color:var(--text-2);border-radius:999px;padding:0 14px;font-size:13px;font-weight:550;cursor:pointer;transition:all var(--dur-1) var(--ease-out)}html[data-theme=light] .learn-module-chip{background:#f8faff}.learn-module-chip:hover{border-color:var(--acc-1);color:var(--text)}.learn-module-chip.is-active{border-color:var(--acc-1);background:var(--acc-1-soft);color:var(--text)}.learn-controls{display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-5)}.ls{height:42px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:12px;padding:0 12px;cursor:pointer;font-size:14px}html[data-theme=light] .ls{background:#fff}.ls:focus{outline:2px solid var(--acc-1);outline-offset:2px}.learn-tag{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:var(--sp-3)}.learn-q{font-size:20px;line-height:1.45;letter-spacing:-.02em;font-weight:550;margin:var(--sp-3) 0 var(--sp-4);color:var(--text)}.learn-a{display:grid;gap:var(--sp-3)}.qa{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:14px;padding:13px 15px;text-align:left;cursor:pointer;font-size:14.5px;transition:all var(--dur-1) var(--ease-out);width:100%;font-weight:500}html[data-theme=light] .qa{background:#f7f9fd}.qa:hover{border-color:var(--acc-1);transform:translateX(2px)}.qa.correct{border-color:var(--ok);background:var(--ok-soft)}.qa.wrong{border-color:var(--bad);background:var(--bad-soft)}.qh{filter:blur(7px);user-select:none;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:13px 15px;color:var(--text);transition:filter var(--dur-2) var(--ease-out);cursor:pointer}.qh.show{filter:none;cursor:default}.learn-fb{margin-top:var(--sp-4);color:var(--text-2);line-height:1.6;font-size:14.5px;min-height:24px}.learn-fb strong{color:var(--text)}`;
       document.head.appendChild(s);
     }
 
+    U.$('#lModules')?.addEventListener('click', e => {
+      const chip = e.target.closest('[data-module]');
+      if (!chip) return;
+      setLearnModule(chip.dataset.module);
+      renderLearnIdleState();
+    });
     U.$('#lNew').addEventListener('click', nextQ);
+    U.$('#lTopic')?.addEventListener('change', renderLearnIdleState);
+    U.$('#lType')?.addEventListener('change', renderLearnIdleState);
     U.$('#lShow').addEventListener('click', () => {
       U.$('#qha')?.classList.add('show');
       if (_q) U.$('#lFb').innerHTML = (_q.ans ? `<strong>Antwort:</strong> ${U.esc(_q.ans)}. ` : '') + U.esc(_q.e || '');
@@ -648,15 +721,23 @@ const Views = (() => {
       U.$$('#lA [data-ai]').forEach(el => { if (+el.dataset.ai === _q.c) el.classList.add('correct'); el.disabled = true; });
       U.$('#lFb').innerHTML = `<strong>${ok ? 'Richtig.' : 'Falsch.'}</strong> ${U.esc(_q.e)}`;
     });
+
+    setLearnModule(selectedModule);
   }
   function nextQ() {
-    const t = U.$('#lTopic')?.value, ty = U.$('#lType')?.value;
-    let pool = QUESTIONS.filter(x => (t === 'all' || x.topic === t) && x.type === ty);
-    if (!pool.length) pool = QUESTIONS.filter(x => t === 'all' || x.topic === t);
-    if (!pool.length) pool = QUESTIONS;
+    const moduleId = getLearnModuleFromStore();
+    const t = U.$('#lTopic')?.value || 'all';
+    const ty = U.$('#lType')?.value || 'quiz';
+    const pool = getFilteredQuestions(moduleId, t, ty);
+    if (!pool.length) {
+      renderLearnEmptyState(moduleId);
+      return;
+    }
     _q = pool[Math.floor(Math.random() * pool.length)];
-    const lbl = MODULES.flatMap(m => m.topics).find(t => t.id === _q.topic)?.title || _q.topic;
-    U.$('#lTag').textContent = lbl;
+    const topic = MODULES.flatMap(m => m.topics).find(topic => topic.id === _q.topic);
+    const topicLabel = topic?.title || _q.topic;
+    const moduleLabel = MODULES.find(m => m.id === _learnTopicToModule.get(_q.topic))?.title;
+    U.$('#lTag').textContent = moduleLabel ? `${moduleLabel} · ${topicLabel}` : topicLabel;
     U.$('#lQ').textContent = _q.q;
     U.$('#lFb').innerHTML = '';
     const ans = U.$('#lA');
