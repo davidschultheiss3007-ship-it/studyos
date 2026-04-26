@@ -17,6 +17,32 @@
    ══════════════════════════════════════════════════════════════════════ */
 'use strict';
 
+/* ── Bootstrap / Startup-Checks ───────────────────────────────────────── */
+if (!Array.isArray(window.MODULES)) {
+  if (window.MODULES == null) {
+    console.warn('[StudyOS] window.MODULES fehlt. Fallback auf leeres Array.');
+  } else {
+    console.warn('[StudyOS] window.MODULES ist kein Array. Fallback auf leeres Array.');
+  }
+  window.MODULES = [];
+}
+if (!Array.isArray(window.QUESTIONS)) {
+  if (window.QUESTIONS == null) {
+    console.warn('[StudyOS] window.QUESTIONS fehlt. Fallback auf leeres Array.');
+  } else {
+    console.warn('[StudyOS] window.QUESTIONS ist kein Array. Fallback auf leeres Array.');
+  }
+  window.QUESTIONS = [];
+}
+if (!window.FULL_CONTENT || typeof window.FULL_CONTENT !== 'object' || Array.isArray(window.FULL_CONTENT)) {
+  if (window.FULL_CONTENT == null) {
+    console.warn('[StudyOS] window.FULL_CONTENT fehlt. Fallback auf leeres Objekt.');
+  } else {
+    console.warn('[StudyOS] window.FULL_CONTENT ist kein Objekt. Fallback auf leeres Objekt.');
+  }
+  window.FULL_CONTENT = {};
+}
+
 /* ── Aliase auf globale Daten (aus data/-Files geladen) ── */
 const MODULES      = window.MODULES;
 const QUESTIONS    = window.QUESTIONS;
@@ -75,6 +101,7 @@ const Store = (() => {
   const topicProgress = (mid,tid) => {
     const t = MODULES.find(m=>m.id===mid)?.topics.find(t=>t.id===tid);
     if (!t) return 0;
+    if (!Array.isArray(t.subtopics) || t.subtopics.length === 0) return 0;
     const done = t.subtopics.filter(s=>isRead(mid,tid,s.id)).length;
     return Math.round(done / t.subtopics.length * 100);
   };
@@ -717,6 +744,102 @@ const Views = (() => {
   return { home, modulesList, moduleView, topicView, subtopicView, fullNotesView, learn, progress };
 })();
 
+function validateDataModel() {
+  const moduleIds = new Set();
+  const topicIdsGlobal = new Set();
+  const legacyKeyOwners = new Map();
+
+  MODULES.forEach((mod, mi) => {
+    if (!mod || typeof mod !== 'object') {
+      console.warn(`[StudyOS] Ungültiges Modul an Position ${mi}.`);
+      return;
+    }
+
+    if (!mod.id) {
+      console.warn('[StudyOS] Modul ohne id gefunden.', mod);
+    } else if (moduleIds.has(mod.id)) {
+      console.warn(`[StudyOS] Doppelte module.id gefunden: "${mod.id}".`);
+    } else {
+      moduleIds.add(mod.id);
+    }
+
+    const topicIdsInModule = new Set();
+    const topics = Array.isArray(mod.topics) ? mod.topics : [];
+    if (!Array.isArray(mod.topics)) {
+      console.warn(`[StudyOS] Modul "${mod.id || mi}" hat kein gültiges topics-Array.`);
+    }
+
+    topics.forEach((topic, ti) => {
+      if (!topic || typeof topic !== 'object') {
+        console.warn(`[StudyOS] Ungültiges Topic in Modul "${mod.id || mi}" an Position ${ti}.`);
+        return;
+      }
+
+      if (!topic.id) {
+        console.warn(`[StudyOS] Topic ohne id in Modul "${mod.id || mi}".`, topic);
+      } else {
+        if (topicIdsInModule.has(topic.id)) {
+          console.warn(`[StudyOS] Doppelte topic.id "${topic.id}" in Modul "${mod.id || mi}".`);
+        }
+        topicIdsInModule.add(topic.id);
+        topicIdsGlobal.add(topic.id);
+      }
+
+      const subtopicIds = new Set();
+      const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
+      if (!Array.isArray(topic.subtopics)) {
+        console.warn(`[StudyOS] Topic "${topic.id || ti}" in Modul "${mod.id || mi}" hat kein gültiges subtopics-Array.`);
+      }
+
+      subs.forEach((sub, si) => {
+        if (!sub || typeof sub !== 'object') {
+          console.warn(`[StudyOS] Ungültiges Subtopic in "${mod.id || mi}/${topic.id || ti}" an Position ${si}.`);
+          return;
+        }
+
+        if (!sub.id) {
+          console.warn(`[StudyOS] Subtopic ohne id in "${mod.id || mi}/${topic.id || ti}".`, sub);
+        } else if (subtopicIds.has(sub.id)) {
+          console.warn(`[StudyOS] Doppelte subtopic.id "${sub.id}" in "${mod.id || mi}/${topic.id || ti}".`);
+        } else {
+          subtopicIds.add(sub.id);
+        }
+
+        const hasBlocks = Array.isArray(sub.blocks) && sub.blocks.length > 0;
+        const hasLegacy = typeof sub.legacyKey === 'string' && sub.legacyKey.length > 0;
+        if (!hasBlocks && !hasLegacy) {
+          console.warn(`[StudyOS] Subtopic "${sub.id || si}" in "${mod.id || mi}/${topic.id || ti}" hat weder blocks[] noch legacyKey.`);
+        }
+        if (hasLegacy && !Object.prototype.hasOwnProperty.call(FULL_CONTENT, sub.legacyKey)) {
+          console.warn(`[StudyOS] legacyKey ohne FULL_CONTENT-Eintrag: "${sub.legacyKey}" (${mod.id || mi}/${topic.id || ti}/${sub.id || si}).`);
+        }
+        if (hasLegacy) {
+          const owner = `${mod.id || mi}/${topic.id || ti}/${sub.id || si}`;
+          if (legacyKeyOwners.has(sub.legacyKey)) {
+            console.warn(`[StudyOS] Duplicate legacyKey-Verwendung "${sub.legacyKey}" in ${owner} (bereits genutzt von ${legacyKeyOwners.get(sub.legacyKey)}).`);
+          } else {
+            legacyKeyOwners.set(sub.legacyKey, owner);
+          }
+        }
+      });
+    });
+  });
+
+  QUESTIONS.forEach((q, qi) => {
+    if (!q || typeof q !== 'object') {
+      console.warn(`[StudyOS] Ungültiger Frageeintrag an Position ${qi}.`);
+      return;
+    }
+    if (!q.topic) {
+      console.warn(`[StudyOS] Frage ohne topic an Position ${qi}.`, q);
+      return;
+    }
+    if (!topicIdsGlobal.has(q.topic)) {
+      console.warn(`[StudyOS] Frage referenziert unbekannte topic.id "${q.topic}" (Frageindex ${qi}).`);
+    }
+  });
+}
+
 /* ── Notes-Layout-Styles (für Hefteinträge im Overlay) ─────────────── */
 (function () {
   const s = document.createElement('style'); s.id = 's-notes';
@@ -776,5 +899,6 @@ window.Views  = Views;
 window.Store  = Store;
 window.MODULES = MODULES;
 
+validateDataModel();
 App.init();
 Router.init();

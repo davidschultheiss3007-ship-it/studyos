@@ -206,6 +206,10 @@ const FULL_CONTENT = {
 <div class="note-callout">Die implizite Volatilität ist die Volatilität, die aus Marktpreisen von Optionen abgeleitet wird. Sie kann deutlich von historischer Volatilität abweichen.</div></div>`
 };
 
+const _riskDuplicateLegacyKeys = Object.keys(FULL_CONTENT).filter(k => Object.prototype.hasOwnProperty.call(window.FULL_CONTENT, k));
+if (_riskDuplicateLegacyKeys.length) {
+  console.warn('[StudyOS] Duplicate FULL_CONTENT keys in data/risk.js:', _riskDuplicateLegacyKeys);
+}
 Object.assign(window.FULL_CONTENT, FULL_CONTENT);
 
 /* ── MODULES (Data Layer · 3 Ebenen, verbatim) ───────────────────────── */
