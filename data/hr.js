@@ -1,3 +1,5 @@
+'use strict';
+
 (function () {
   window.MODULES = window.MODULES || [];
   window.QUESTIONS = window.QUESTIONS || [];
@@ -8,125 +10,45 @@
   const hrModule = {
     id: "hr",
     title: "Human Resources",
-    description: "Grundlagen, Arbeitsrecht, Personalpolitik, Ethik, Personalplanung sowie Personalgewinnung und Entwicklung.",
-    icon: "👥",
-    category: "BWL",
+    subtitle: "Grundlagen, Arbeitsrecht, Personalpolitik, Ethik, Personalplanung sowie Personalgewinnung und Entwicklung.",
+    icon: "book",
+    color: "violet",
     topics: [
       {
         id: "hr-grundlagen",
         title: "Grundlagen des Human Resource Management",
-        description: "Begriffe, Ziele, Aufgaben, Einflussfaktoren, Spannungsfelder und interdisziplinäre Schnittstellen des HRM.",
-        icon: "📘",
-        legacyKey: "hr-grundlagen",
-        contentKey: "hr-grundlagen",
-        subtopics: [
-          "HRM und Organisation",
-          "Begriffsklärung: Personal, Personalmanagement, Personalmarketing, Personalpolitik",
-          "Wirtschaftliche, soziale und individuelle Ziele",
-          "Hauptaufgaben des HRM",
-          "Einordnung des Personalwesens",
-          "Einflussfaktoren: Werte, Technologie, Markt, Organisation, Globalisierung",
-          "Spannungsfelder im HRM",
-          "Interdisziplinäre Schnittmenge"
-        ]
+        intro: "Begriffe, Ziele, Aufgaben, Einflussfaktoren, Spannungsfelder und interdisziplinäre Schnittstellen des HRM.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-grundlagen" }]
       },
       {
         id: "hr-arbeitsrecht",
         title: "Arbeitsrechtliche Grundlagen",
-        description: "Arbeitsvertrag, Arbeitgeber, Arbeitnehmer, Arbeitsverhältnis, Pflichten, leitende Angestellte und arbeitsrechtliche Teilbereiche.",
-        icon: "⚖️",
-        legacyKey: "hr-arbeitsrecht",
-        contentKey: "hr-arbeitsrecht",
-        subtopics: [
-          "Individuelles Arbeitsrecht",
-          "Pflichten von Arbeitgeber und Arbeitnehmer",
-          "Personalbegriff: Köpfe und Kapazitäten",
-          "Arbeitgeberbegriff",
-          "Arbeitnehmerbegriff",
-          "Arbeitsverhältnis",
-          "Leitende Angestellte",
-          "Arbeitsvertragsrecht, Arbeitsschutzrecht, Tarifrecht, Mitbestimmung"
-        ]
+        intro: "Arbeitsvertrag, Arbeitgeber, Arbeitnehmer, Arbeitsverhältnis, Pflichten, leitende Angestellte und arbeitsrechtliche Teilbereiche.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-arbeitsrecht" }]
       },
       {
         id: "hr-personalpolitik",
         title: "Unternehmens- und Personalpolitik",
-        description: "Strategisches Management, Unternehmenspolitik, Personalpolitik, psychologischer Vertrag und aktuelle personalpolitische Herausforderungen.",
-        icon: "🧭",
-        legacyKey: "hr-personalpolitik",
-        contentKey: "hr-personalpolitik",
-        subtopics: [
-          "Strategie und strategisches Management",
-          "Normative, strategische und operative Ebene",
-          "Unternehmenspolitik",
-          "Definition und Ziele der Personalpolitik",
-          "Ressource Mensch und Mitarbeiterqualifikation",
-          "Magisches Dreieck der Personalpolitik",
-          "Psychologischer Vertrag",
-          "Mitarbeiterfreundliche Personalpolitik",
-          "Unternehmenskultur und Corporate Identity",
-          "Aktuelle Herausforderungen"
-        ]
+        intro: "Strategisches Management, Unternehmenspolitik, Personalpolitik, psychologischer Vertrag und aktuelle personalpolitische Herausforderungen.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-personalpolitik" }]
       },
       {
         id: "hr-ethik-werte-generationen",
         title: "Ethik, Werte und Generationen im HRM",
-        description: "Wertewandel, Generationenführung, Arbeitgeberqualität, Ethik, Moral, Unternehmensethik und Führungsethik.",
-        icon: "🧩",
-        legacyKey: "hr-ethik-werte-generationen",
-        contentKey: "hr-ethik-werte-generationen",
-        subtopics: [
-          "Wertewandel",
-          "Generationen und Arbeitshaltung",
-          "Führen unterschiedlicher Generationen",
-          "Arbeitgeberqualität",
-          "Ethik, Moral, Praxis und Tugend",
-          "Aristoteles und Kant",
-          "Trolley-Problem",
-          "Utilitaristische und deontologische Ethik",
-          "Unternehmens- und Führungsethik",
-          "Ethik, Gesetz und Graubereich"
-        ]
+        intro: "Wertewandel, Generationenführung, Arbeitgeberqualität, Ethik, Moral, Unternehmensethik und Führungsethik.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-ethik-werte-generationen" }]
       },
       {
         id: "hr-personalplanung",
         title: "Personalplanung",
-        description: "Personalstrategie, Personalbedarfsbestimmung, Personalbestandsanalyse, Soll-Ist-Abgleich und Maßnahmen bei Unter- oder Überdeckung.",
-        icon: "📊",
-        legacyKey: "hr-personalplanung",
-        contentKey: "hr-personalplanung",
-        subtopics: [
-          "Personalstrategie",
-          "Sachziel der Personalplanung",
-          "Personalbedarfsbestimmung",
-          "Ablauf der Personalplanung",
-          "Personalbestandsanalyse",
-          "Personalbedarfsanalyse",
-          "Soll-Ist-Abgleich",
-          "Quantitative Berechnung",
-          "Bestandsprognose und Mitarbeiterjahre",
-          "Maßnahmen bei Unterdeckung und Überdeckung"
-        ]
+        intro: "Personalstrategie, Personalbedarfsbestimmung, Personalbestandsanalyse, Soll-Ist-Abgleich und Maßnahmen bei Unter- oder Überdeckung.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-personalplanung" }]
       },
       {
         id: "hr-personalgewinnung-entwicklung",
         title: "Personalgewinnung, Entwicklung und Karrierewege",
-        description: "Personalgewinnungsplanung, Kompetenzprofile, Anforderungsprofile, Funktionsmatrix, Stellenbeschreibung, Personalbesetzung und Arbeitsmarktforschung.",
-        icon: "🎯",
-        legacyKey: "hr-personalgewinnung-entwicklung",
-        contentKey: "hr-personalgewinnung-entwicklung",
-        subtopics: [
-          "Personalgewinnungsplanung",
-          "Planung offener Positionen",
-          "Fach-, Persönlichkeits-, Methoden- und Sozialkompetenz",
-          "Anforderungs- und Kompetenzprofile",
-          "Funktionsmatrix",
-          "Karrierewege: Linien-, Fach- und Projektmanagement",
-          "Stellenbeschreibung",
-          "Personalbesetzung",
-          "Interne und externe Arbeitsmarktanalyse",
-          "Offenes und latentes Beschaffungspotential"
-        ]
+        intro: "Personalgewinnungsplanung, Kompetenzprofile, Anforderungsprofile, Funktionsmatrix, Stellenbeschreibung, Personalbesetzung und Arbeitsmarktforschung.",
+        subtopics: [{ id: "gesamt", title: "Gesamter Hefteintrag", legacyKey: "hr-personalgewinnung-entwicklung" }]
       }
     ]
   };
@@ -1530,14 +1452,35 @@
     }
   ];
 
+  const normalizedQuestions = hrQuestions.map(function (question) {
+    if (question.type === "mc") {
+      return {
+        topic: question.topic,
+        type: "quiz",
+        q: question.question,
+        a: question.options,
+        c: question.correct,
+        e: question.explanation
+      };
+    }
+
+    return {
+      topic: question.topic,
+      type: "flash",
+      q: question.question,
+      ans: question.answer,
+      e: question.explanation
+    };
+  });
+
   const existingQuestionKeys = new Set(
     window.QUESTIONS.map(function (question) {
-      return question && question.topic + "::" + question.question;
+      return question && question.topic + "::" + question.q;
     })
   );
 
-  hrQuestions.forEach(function (question) {
-    const key = question.topic + "::" + question.question;
+  normalizedQuestions.forEach(function (question) {
+    const key = question.topic + "::" + question.q;
     if (!existingQuestionKeys.has(key)) {
       window.QUESTIONS.push(question);
       existingQuestionKeys.add(key);
