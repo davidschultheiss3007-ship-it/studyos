@@ -187,6 +187,9 @@ const App = (() => {
       items.push({ l:m.title, sub:'Modul', ic:'book', act:()=>Router.navigate(`#/m/${m.id}`) });
       m.topics.forEach(t => {
         items.push({ l:t.title, sub:m.title, ic:'layers', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}`) });
+        if (Array.isArray(t.summary) && t.summary.length) {
+          items.push({ l:`${t.title} · Zusammenfassung`, sub:m.title, ic:'book', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}/summary`) });
+        }
         t.subtopics.forEach(s =>
           items.push({ l:s.title, sub:t.title, ic:'bookmark', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}/s/${s.id}`) })
         );
@@ -432,7 +435,15 @@ const Views = (() => {
       { label: top.title }
     ]);
 
-    const items = top.subtopics.map((s, i) => {
+    const summaryItem = Array.isArray(top.summary) && top.summary.length ? `
+        <button class="subtopic-item subtopic-item--summary" onclick="Router.navigate('#/m/${mid}/t/${tid}/summary')">
+          <span class="subtopic-item__num">Σ</span>
+          <span class="subtopic-item__title">Zusammenfassung</span>
+          <span class="subtopic-item__check"></span>
+          ${U.icon('chevron-right', 'subtopic-item__arrow')}
+        </button>` : '';
+
+    const items = summaryItem + top.subtopics.map((s, i) => {
       const done = Store.isRead(mid, tid, s.id);
       return `
         <button class="subtopic-item" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${s.id}')">
@@ -464,6 +475,40 @@ const Views = (() => {
         <div><h2 class="section-head__title">Unterthemen</h2><p class="section-head__sub">Öffnen markiert als gelesen · Grüner Haken bedeutet fertig.</p></div>
       </div>
       <div class="subtopic-list">${items}</div>`);
+  }
+
+  /* ─ Topic-Zusammenfassung ─ */
+  function topicSummaryView(mid, tid) {
+    const mod = U.find.mod(mid);
+    const top = U.find.topic(mid, tid);
+    if (!top) { moduleView(mid); return; }
+
+    App.setActiveNav(mid);
+    const semester = U.find.semester(mod.semester);
+    App.setBreadcrumb([
+      { label: 'Startseite', href: '#/' },
+      ...(semester ? [{ label: semester.title, href: `#/s/${semester.id}` }] : []),
+      { label: mod.title, href: `#/m/${mid}` },
+      { label: top.title, href: `#/m/${mid}/t/${tid}` },
+      { label: 'Zusammenfassung' }
+    ]);
+
+    const summaryBlocks = Array.isArray(top.summary) && top.summary.length
+      ? top.summary
+      : [{ type: 'text', content: top.intro || 'Für dieses Thema ist noch keine Zusammenfassung hinterlegt.' }];
+
+    render(`
+      <article class="notes notes--summary">
+        <header class="notes__header">
+          <div class="notes__eyebrow">${U.esc(mod.title)} · ${U.esc(top.title)}</div>
+          <h1 class="notes__title">Zusammenfassung</h1>
+          <p class="notes__intro">Überblick zum Thema „${U.esc(top.title)}".</p>
+        </header>
+        <div class="notes__body">${BlockRenderer.renderBlocks(summaryBlocks)}</div>
+        <footer class="notes__footer">
+          <button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}/t/${tid}')">${U.icon('arrow-left')} Zurück zur Themenübersicht</button>
+        </footer>
+      </article>`);
   }
 
   /* ─ Subtopic-Hefteintrag ─ */
@@ -510,7 +555,7 @@ const Views = (() => {
     Store.markRead(mid, tid, sid);
   }
 
-    return { home, modulesList, semesterView, moduleView, topicView, subtopicView };
+    return { home, modulesList, semesterView, moduleView, topicView, topicSummaryView, subtopicView };
 })();
 
 /* ── Notes-Layout-Styles (für Hefteinträge im Overlay) ─────────────── */
@@ -563,6 +608,7 @@ Router.register(/^modules$/,                                   Views.modulesList
 Router.register(/^s\/([^/]+)$/,                               Views.semesterView);
 Router.register(/^m\/([^/]+)$/,                                Views.moduleView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)$/,                    Views.topicView);
+Router.register(/^m\/([^/]+)\/t\/([^/]+)\/summary$/,            Views.topicSummaryView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)\/s\/([^/]+)$/,        Views.subtopicView);
 
 window.Router = Router;
