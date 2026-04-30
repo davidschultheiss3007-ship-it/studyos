@@ -267,6 +267,7 @@
 
   const MODULE = {
     id: MODULE_ID,
+    semester: "semester-04",
     title: 'Behavioral Finance',
     subtitle: 'Psychologische Verzerrungen, Heuristiken und Entscheidungsverhalten unter Unsicherheit',
     icon: 'brain',

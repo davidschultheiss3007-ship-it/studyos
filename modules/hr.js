@@ -9,6 +9,7 @@
 
   const hrModule = {
     id: "hr",
+    semester: "semester-04",
     title: "Human Resources",
     subtitle: "Grundlagen, Arbeitsrecht, Personalpolitik, Ethik, Personalplanung sowie Personalgewinnung und Entwicklung.",
     icon: "book",
