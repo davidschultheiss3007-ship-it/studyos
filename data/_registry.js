@@ -7,6 +7,14 @@
    ══════════════════════════════════════════════════════════════════════ */
 'use strict';
 
+window.SEMESTERS    = window.SEMESTERS    || [
+  {
+    id: 'semester-04',
+    title: '4. Semester',
+    description: 'Module des vierten Semesters',
+    modules: ['asset-management', 'behavioral-finance', 'hr']
+  }
+];
 window.MODULES      = window.MODULES      || [];
 window.QUESTIONS    = window.QUESTIONS    || [];
 window.FULL_CONTENT = window.FULL_CONTENT || {};
