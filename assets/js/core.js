@@ -2,64 +2,21 @@
    StudyOS v3 · core.js · PASS A (nach Refactor)
    ──────────────────────────────────────────────────────────────────────
    Daten ausgelagert nach data/_registry.js + data/<modul>.js
-   Erwartet beim Start: window.MODULES, window.QUESTIONS, window.FULL_CONTENT
+   Erwartet beim Start: window.MODULES
 
-    1. Legacy CSS Injection      — Styles für FULL_CONTENT HTML
-    2. (Daten in data/-Files)
-    3. Store                     — LocalStorage-Wrapper
-    4. Util                      — esc, slug, dom helpers
-    5. BlockRenderer             — typisierte Content-Blöcke
-    6. Router                    — Hash-basiert, Deep-Linking
-    7. App                       — Shell, Sidebar, Topbar, Cmd-K, Overlay
-    8. Views                     — Home, Modules, Module, Topic, Subtopic, FullNotes, Learn, Progress
-    9. Notes-Layout-Styles
-   10. Init
+    1. Store                     — LocalStorage-Wrapper
+    2. Util                      — esc, slug, dom helpers
+    3. BlockRenderer             — typisierte Content-Blöcke
+    4. Router                    — Hash-basiert, Deep-Linking
+    5. App                       — Shell, Sidebar, Topbar, Cmd-K
+    6. Views                     — Home, Modules, Module, Topic, Subtopic
+    7. Notes-Layout-Styles
+    8. Init
    ══════════════════════════════════════════════════════════════════════ */
 'use strict';
 
 /* ── Aliase auf globale Daten (aus data/-Files geladen) ── */
 const MODULES      = window.MODULES;
-const QUESTIONS    = window.QUESTIONS;
-const FULL_CONTENT = window.FULL_CONTENT;
-
-/* ── 1. Legacy CSS für FULL_CONTENT ── */
-(function () {
-  const s = document.createElement('style');
-  s.id = 's-legacy';
-  s.textContent = `
-    .note-page{padding:0}
-    .note-page h3{font-family:var(--font-read);font-size:24px;font-weight:600;letter-spacing:-.02em;margin:0 0 10px;color:var(--text)}
-    .note-page h4{font-family:var(--font-read);font-size:19px;font-weight:600;margin:22px 0 8px;color:var(--text)}
-    .note-page p,.note-page li{color:var(--text-2);line-height:1.7;font-size:15.5px}
-    .note-page ul,.note-page ol{margin:8px 0 0;padding-left:20px;color:var(--text-2)}
-    .note-page li{margin:4px 0}
-    .note-formula{font-family:var(--font-mono);font-size:15px;font-weight:500;background:rgba(116,215,255,.07);border:1px solid rgba(116,215,255,.2);padding:12px 16px;border-radius:12px;margin:12px 0;color:var(--text);overflow-x:auto;display:block;text-align:center}
-    .note-callout{border-left:3px solid var(--acc-1);background:var(--acc-1-soft);padding:13px 16px;border-radius:12px;color:var(--text-2);line-height:1.65;font-size:14.5px;margin:14px 0}
-    .note-callout b,.note-callout strong{color:var(--text)}
-    .note-warning{border-left-color:var(--warn)!important;background:var(--warn-soft)!important}
-    .note-table{overflow-x:auto;border:1px solid var(--line);border-radius:14px;margin:14px 0}
-    .note-table table{border-collapse:collapse;width:100%;min-width:520px}
-    .note-table th,.note-table td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:left;font-size:13.5px;line-height:1.55;vertical-align:top}
-    .note-table th{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);background:rgba(255,255,255,.025)}
-    .note-table tr:last-child td{border-bottom:0}
-    .note-table tr:hover td{background:rgba(116,215,255,.03)}
-    .note-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:14px 0}
-    .note-card{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:14px;padding:14px}
-    .note-card b{display:block;font-weight:650;color:var(--text);margin-bottom:6px;font-family:var(--font-ui)}
-    .note-card p{margin:0;font-size:14px;color:var(--text-2);line-height:1.55}
-    html[data-theme=light] .note-formula{background:rgba(9,132,255,.06);border-color:rgba(9,132,255,.18)}
-    html[data-theme=light] .note-table th{background:rgba(16,24,39,.025)}
-    html[data-theme=light] .note-card{background:#f7f9fd}
-    @media(max-width:640px){.note-grid{grid-template-columns:1fr}}
-  `;
-  document.head.appendChild(s);
-})();
-
-
-/* ── 2./3./4. Daten (FULL_CONTENT, MODULES, QUESTIONS) ──────────────────
-   Ausgelagert nach data/_registry.js + data/<modul>.js
-   Werden über window.* alias konsumiert (siehe oben).
-   ──────────────────────────────────────────────────────────────────── */
 
 /* ── 5. STORE ─────────────────────────────────────────────────────────── */
 const Store = (() => {
@@ -142,9 +99,6 @@ const BlockRenderer = {
     if (Array.isArray(sub.blocks) && sub.blocks.length) {
       return `<div class="notes__body">${this.renderBlocks(sub.blocks)}</div>`;
     }
-    if (sub.legacyKey && FULL_CONTENT[sub.legacyKey]) {
-      return FULL_CONTENT[sub.legacyKey];
-    }
     return `<div class="notes__empty"><p style="color:var(--text-3);font-style:italic">Für dieses Unterthema ist noch kein Inhalt hinterlegt.</p></div>`;
   }
 };
@@ -193,30 +147,6 @@ const App = (() => {
     ).join('');
   }
 
-  /* Full-Content Overlay */
-  function openFullOverlay({ title, eyebrow, html, printMode = false }) {
-    const ov = U.$('#full-overlay'); if (!ov) return;
-    ov.querySelector('[data-full-title]').textContent   = title;
-    ov.querySelector('[data-full-eyebrow]').textContent = eyebrow;
-    const body = ov.querySelector('[data-full-body]');
-    body.innerHTML = html;
-    body.classList.toggle('full-overlay__body--print', printMode);
-    ov.removeAttribute('hidden');
-    ov.dataset.printMode = printMode ? '1' : '0';
-    document.body.style.overflow = 'hidden';
-  }
-  function closeFullOverlay() {
-    const ov = U.$('#full-overlay'); if (!ov) return;
-    ov.setAttribute('hidden', '');
-    delete ov.dataset.printMode;
-    document.body.style.overflow = '';
-    /* Wenn Overlay aus Deep-Link geöffnet, beim Schließen Hash-Suffix entfernen */
-    if (location.hash.match(/\/(s|full)\//)) {
-      const cleaned = location.hash.replace(/\/(s|full)\/.*$/, '').replace(/\/full$/, '');
-      history.replaceState(null, '', cleaned || '#/');
-    }
-  }
-
   /* Command Palette */
   let cmdOpen = false;
   function openCmd() {
@@ -233,14 +163,11 @@ const App = (() => {
     const items = [
       { l:'Startseite',    sub:'Navigation', ic:'home',    act:()=>Router.navigate('#/') },
       { l:'Module',        sub:'Navigation', ic:'layers',  act:()=>Router.navigate('#/modules') },
-      { l:'Lernbereich',   sub:'Navigation', ic:'brain',   act:()=>Router.navigate('#/learn') },
-      { l:'Fortschritt',   sub:'Navigation', ic:'chart',   act:()=>Router.navigate('#/progress') }
     ];
     MODULES.forEach(m => {
       items.push({ l:m.title, sub:'Modul', ic:'book', act:()=>Router.navigate(`#/m/${m.id}`) });
       m.topics.forEach(t => {
         items.push({ l:t.title, sub:m.title, ic:'layers', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}`) });
-        items.push({ l:`${t.title} · Gesamter Hefteintrag`, sub:'Hefteintrag', ic:'book', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}/full`) });
         t.subtopics.forEach(s =>
           items.push({ l:s.title, sub:t.title, ic:'bookmark', act:()=>Router.navigate(`#/m/${m.id}/t/${t.id}/s/${s.id}`) })
         );
@@ -294,7 +221,7 @@ const App = (() => {
         U.$('[data-sidebar]')?.classList.remove('is-open');
     });
 
-    [['home','#/'], ['modules','#/modules'], ['learn','#/learn'], ['progress','#/progress']].forEach(([k, h]) =>
+    [['home','#/'], ['modules','#/modules']].forEach(([k, h]) =>
       U.$(`[data-nav="${k}"]`)?.addEventListener('click', e => { e.preventDefault(); Router.navigate(h); }));
 
     U.$('[data-search-input]')?.addEventListener('focus', () => openCmd());
@@ -303,14 +230,11 @@ const App = (() => {
     U.$('[data-cmd-input]')?.addEventListener('input', e => renderCmd(e.target.value));
     initCmdKeyboardNav();
 
-    U.$$('[data-full-close]').forEach(el => el.addEventListener('click', closeFullOverlay));
-    U.$('.full-overlay__backdrop')?.addEventListener('click', closeFullOverlay);
 
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCmd(); }
       if (e.key === 'Escape') {
         if (cmdOpen) closeCmd();
-        else if (!U.$('#full-overlay').hasAttribute('hidden')) closeFullOverlay();
       }
     });
 
@@ -319,7 +243,7 @@ const App = (() => {
     renderSidebarModules();
   }
 
-  return { init, setActiveNav, setBreadcrumb, openFullOverlay, closeFullOverlay };
+  return { init, setActiveNav, setBreadcrumb };
 })();
 
 /* ── 10. VIEWS ────────────────────────────────────────────────────────── */
@@ -356,23 +280,17 @@ const Views = (() => {
         <p class="module-card__desc">Statistik, Marketing, Bilanzierung — als Objekt in MODULES[] ergänzen.</p>
         <div class="module-card__foot">${U.pb(0)}<div class="module-card__stat"><span>bereit</span><span>0%</span></div></div>
       </article>
-      <article class="module-card" onclick="Router.navigate('#/learn')">
-        <div class="module-card__icon">${U.icon('brain')}</div>
-        <h3 class="module-card__title">Schnell lernen</h3>
-        <p class="module-card__desc">Zufällige Fragen aus allen integrierten Themen — Quiz, Aufgaben, Karteikarten.</p>
-        <div class="module-card__foot">${U.pb(QUESTIONS.length ? 38 : 0)}<div class="module-card__stat"><span>${QUESTIONS.length} Fragen</span><span>Mixed</span></div></div>
-      </article>`;
+`;
 
     render(`
       <div class="view--home">
         <section class="hero">
           <div class="hero__eyebrow">StudyOS · v3</div>
           <h1 class="hero__title">Deine Module. <em>Dein Wissen.</em></h1>
-          <p class="hero__lead">Eine modulare Lernplattform: Hefteinträge, Quiz, Fortschritt. Neue Module werden ohne Layout-Änderung als Objekt ergänzt.</p>
+          <p class="hero__lead">Eine modulare Lernplattform: Semester, Module, Themen und strukturierte Zusammenfassungen.</p>
           <div class="hero__meta">
             <span class="pill pill--accent">${MODULES.length} Modul${MODULES.length !== 1 ? 'e' : ''}</span>
             <span class="pill">${totalSubs} Unterthemen</span>
-            <span class="pill">${QUESTIONS.length} Lernfragen</span>
             <span class="pill">⌘K Schnellzugriff</span>
           </div>
         </section>
@@ -402,7 +320,7 @@ const Views = (() => {
       <section class="hero">
         <div class="hero__eyebrow">Bibliothek</div>
         <h1 class="hero__title">Deine <em>Studienbibliothek</em>.</h1>
-        <p class="hero__lead">Jedes Modul: Themen, Unterthemen, Hefteinträge, Quiz — generisch gerendert, ohne Sondercode.</p>
+        <p class="hero__lead">Jedes Modul: Themen, Unterthemen und strukturierte Hefteinträge — generisch gerendert, ohne Sondercode.</p>
       </section>
       <div class="section-head" style="margin-top:var(--sp-8)"><div><h2 class="section-head__title">Alle Module</h2></div></div>
       <div class="grid grid--3">${cards}</div>`);
@@ -449,7 +367,7 @@ const Views = (() => {
       </section>
       <div class="section-head" style="margin-top:var(--sp-8)">
         <div><h2 class="section-head__title">Themen</h2><p class="section-head__sub">Klicke ein Thema, um Unterthemen zu sehen.</p></div>
-        <button class="btn btn--primary" onclick="Router.navigate('#/learn')">${U.icon('brain')} Lernen starten</button>
+
       </div>
       <div class="grid grid--3">${cards}</div>`);
   }
@@ -485,7 +403,6 @@ const Views = (() => {
         <button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}')">${U.icon('arrow-left')} Modul</button>
         <div style="flex:1"></div>
         <button class="btn" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${top.subtopics[0]?.id}')">${U.icon('book')} Unterthema öffnen</button>
-        <button class="btn btn--primary" onclick="Router.navigate('#/m/${mid}/t/${tid}/full')">${U.icon('layers')} Gesamter Hefteintrag</button>
       </div>
       <section class="hero" style="padding:var(--sp-7) var(--sp-8)">
         <div class="hero__eyebrow">${U.esc(mod.title)}</div>
@@ -502,27 +419,32 @@ const Views = (() => {
       <div class="subtopic-list">${items}</div>`);
   }
 
-  /* ─ Subtopic-Hefteintrag (Overlay, deeplink-fähig) ─ */
+  /* ─ Subtopic-Hefteintrag ─ */
   function subtopicView(mid, tid, sid) {
     const mod = U.find.mod(mid);
     const top = U.find.topic(mid, tid);
     const sub = U.find.sub(mid, tid, sid);
     if (!sub) { topicView(mid, tid); return; }
 
-    topicView(mid, tid);
+    App.setActiveNav(mid);
+    App.setBreadcrumb([
+      { label: 'Startseite', href: '#/' },
+      { label: mod.title, href: `#/m/${mid}` },
+      { label: top.title, href: `#/m/${mid}/t/${tid}` },
+      { label: sub.title }
+    ]);
 
     const idx = top.subtopics.findIndex(s => s.id === sid);
     const prev = top.subtopics[idx - 1];
     const next = top.subtopics[idx + 1];
-
     const nav = `
       <div class="notes__nav">
-        ${prev ? `<button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${prev.id}')">${U.icon('arrow-left')} ${U.esc(prev.title)}</button>` : '<span></span>'}
+        ${prev ? `<button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${prev.id}')">${U.icon('arrow-left')} ${U.esc(prev.title)}</button>` : "<span></span>"}
         <span class="notes__nav-meta">Unterthema ${idx + 1} von ${top.subtopics.length}</span>
-        ${next ? `<button class="btn" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${next.id}')">${U.esc(next.title)} ${U.icon('arrow-right')}</button>` : '<span></span>'}
+        ${next ? `<button class="btn" onclick="Router.navigate('#/m/${mid}/t/${tid}/s/${next.id}')">${U.esc(next.title)} ${U.icon('arrow-right')}</button>` : "<span></span>"}
       </div>`;
 
-    const body = `
+    render(`
       <article class="notes">
         <header class="notes__header">
           <div class="notes__eyebrow">${U.esc(mod.title)} · ${U.esc(top.title)}</div>
@@ -532,270 +454,14 @@ const Views = (() => {
         ${BlockRenderer.renderSubtopic(sub)}
         ${nav}
         <footer class="notes__footer">
-          <button class="btn btn--primary" onclick="Router.navigate('#/m/${mid}/t/${tid}/full')">${U.icon('layers')} Gesamter Hefteintrag</button>
           <button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}/t/${tid}')">${U.icon('arrow-left')} Zurück zur Themenübersicht</button>
         </footer>
-      </article>`;
+      </article>`);
 
-    App.openFullOverlay({
-      title: sub.title,
-      eyebrow: `${top.title} · ${mod.title}`,
-      html: body
-    });
     Store.markRead(mid, tid, sid);
   }
 
-  /* ─ Gesamter Hefteintrag ─ */
-  function fullNotesView(mid, tid) {
-    const mod = U.find.mod(mid);
-    const top = U.find.topic(mid, tid);
-    if (!top) { moduleView(mid); return; }
-
-    topicView(mid, tid);
-
-    const sections = top.subtopics.map((s, i) => `
-      <section class="notes__section">
-        <div class="notes__section-meta">
-          <span class="notes__section-num">${U.pad(i + 1)}</span>
-          <span class="notes__section-of">/ ${U.pad(top.subtopics.length)}</span>
-        </div>
-        <h2 class="notes__section-title">${U.esc(s.title)}</h2>
-        ${BlockRenderer.renderSubtopic(s)}
-      </section>
-      ${i < top.subtopics.length - 1 ? '<hr class="notes__sep">' : ''}
-    `).join('');
-
-    const body = `
-      <article class="notes notes--full">
-        <header class="notes__header notes__header--full">
-          <div class="notes__eyebrow">${U.esc(mod.title)}</div>
-          <h1 class="notes__title">${U.esc(top.title)}</h1>
-          <p class="notes__intro">${U.esc(top.intro)}</p>
-          <div class="notes__hero-meta">
-            <span class="pill pill--accent">${top.subtopics.length} Unterthemen</span>
-            <span class="pill">Gesamter Hefteintrag</span>
-            <span class="pill">Print-Ready</span>
-          </div>
-        </header>
-        ${sections}
-        <footer class="notes__footer notes__footer--full">
-          <button class="btn btn--primary" onclick="window.print()">${U.icon('printer')} Drucken / PDF</button>
-          <button class="btn btn--ghost" onclick="Router.navigate('#/m/${mid}/t/${tid}')">${U.icon('arrow-left')} Zurück</button>
-        </footer>
-      </article>`;
-
-    App.openFullOverlay({
-      title: `Gesamter Hefteintrag — ${top.title}`,
-      eyebrow: `${mod.title} · ${top.subtopics.length} Unterthemen`,
-      html: body,
-      printMode: true
-    });
-
-    top.subtopics.forEach(s => Store.markRead(mid, tid, s.id));
-  }
-
-  /* ─ Lernbereich ─ */
-  let _q = null;
-  const _learnTopicToModule = new Map(
-    MODULES.flatMap(mod => mod.topics.map(topic => [topic.id, mod.id]))
-  );
-
-  function getLearnModuleFromStore() {
-    const stored = Store.get('learn.module', 'all');
-    return stored === 'all' || MODULES.some(m => m.id === stored) ? stored : 'all';
-  }
-
-  function getTopicsForLearnModule(moduleId) {
-    if (moduleId === 'all') return MODULES.flatMap(mod => mod.topics);
-    return MODULES.find(mod => mod.id === moduleId)?.topics || [];
-  }
-
-  function getFilteredQuestions(moduleId, topicId, typeId) {
-    const byModule = QUESTIONS.filter(q => moduleId === 'all' || _learnTopicToModule.get(q.topic) === moduleId);
-    const byTopic = byModule.filter(q => topicId === 'all' || q.topic === topicId);
-    const byType = byTopic.filter(q => q.type === typeId);
-    return byType.length ? byType : byTopic;
-  }
-
-  function renderLearnTopicOptions(moduleId, selectedTopic = 'all') {
-    const select = U.$('#lTopic');
-    if (!select) return;
-    const topics = getTopicsForLearnModule(moduleId);
-    const validTopic = selectedTopic === 'all' || topics.some(t => t.id === selectedTopic) ? selectedTopic : 'all';
-    select.innerHTML = [
-      `<option value="all">Alle Themen</option>`,
-      ...topics.map(t => `<option value="${t.id}">${U.esc(t.title)}</option>`)
-    ].join('');
-    select.value = validTopic;
-  }
-
-  function setLearnModule(moduleId) {
-    const current = moduleId === 'all' || MODULES.some(m => m.id === moduleId) ? moduleId : 'all';
-    Store.set('learn.module', current);
-    U.$$('#lModules [data-module]').forEach(btn => btn.classList.toggle('is-active', btn.dataset.module === current));
-    renderLearnTopicOptions(current, U.$('#lTopic')?.value || 'all');
-  }
-
-  function renderLearnEmptyState(moduleId) {
-    _q = null;
-    const moduleLabel = moduleId === 'all'
-      ? 'alle Module'
-      : MODULES.find(m => m.id === moduleId)?.title || 'das gewählte Modul';
-    U.$('#lTag').textContent = 'Keine Fragen gefunden';
-    U.$('#lQ').textContent = `Für ${moduleLabel} sind aktuell keine passenden Fragen vorhanden.`;
-    U.$('#lA').innerHTML = '';
-    U.$('#lFb').innerHTML = 'Bitte wähle ein anderes Thema oder einen anderen Aufgabentyp.';
-  }
-
-  function renderLearnIdleState() {
-    _q = null;
-    U.$('#lTag').textContent = 'Bereit';
-    U.$('#lQ').textContent = 'Klicke auf „Neue Frage", um zu beginnen.';
-    U.$('#lA').innerHTML = '';
-    U.$('#lFb').innerHTML = '';
-  }
-
-  function learn() {
-    App.setActiveNav('learn');
-    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: 'Lernbereich' }]);
-
-    const selectedModule = getLearnModuleFromStore();
-    const moduleButtons = [
-      `<button class="learn-module-chip${selectedModule === 'all' ? ' is-active' : ''}" data-module="all">Alle Module</button>`,
-      ...MODULES.map(mod => `<button class="learn-module-chip${selectedModule === mod.id ? ' is-active' : ''}" data-module="${mod.id}">${U.esc(mod.title)}</button>`)
-    ].join('');
-    const topicOptions = [
-      `<option value="all">Alle Themen</option>`,
-      ...getTopicsForLearnModule(selectedModule).map(t => `<option value="${t.id}">${U.esc(t.title)}</option>`)
-    ].join('');
-
-    render(`
-      <section class="hero">
-        <div class="hero__eyebrow">Lernbereich</div>
-        <h1 class="hero__title">Active Recall statt <em>nur lesen</em>.</h1>
-        <p class="hero__lead">Wähle Thema und Aufgabentyp. Die App generiert Fragen aus den integrierten Inhalten.</p>
-      </section>
-      <div class="learn-card">
-        <div class="learn-modules" id="lModules">${moduleButtons}</div>
-        <div class="learn-controls">
-          <select id="lTopic" class="ls">${topicOptions}</select>
-          <select id="lType" class="ls">
-            <option value="quiz">Quiz</option>
-            <option value="task">Rechenaufgabe</option>
-            <option value="cloze">Lückentext</option>
-            <option value="flash">Karteikarte</option>
-          </select>
-          <button class="btn btn--primary" id="lNew">${U.icon('zap')} Neue Frage</button>
-          <button class="btn" id="lShow">Antwort zeigen</button>
-        </div>
-        <div id="lTag" class="learn-tag">Bereit</div>
-        <div id="lQ" class="learn-q">Klicke auf „Neue Frage", um zu beginnen.</div>
-        <div id="lA" class="learn-a"></div>
-        <div id="lFb" class="learn-fb"></div>
-      </div>`);
-
-    if (!U.$('#s-learn')) {
-      const s = document.createElement('style'); s.id = 's-learn';
-      s.textContent = `.learn-card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--sp-6);margin-top:var(--sp-6);box-shadow:var(--shadow-sm)}html[data-theme=light] .learn-card{background:#fff}.learn-modules{display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}.learn-module-chip{height:36px;border:1px solid var(--line);background:rgba(255,255,255,.025);color:var(--text-2);border-radius:999px;padding:0 14px;font-size:13px;font-weight:550;cursor:pointer;transition:all var(--dur-1) var(--ease-out)}html[data-theme=light] .learn-module-chip{background:#f8faff}.learn-module-chip:hover{border-color:var(--acc-1);color:var(--text)}.learn-module-chip.is-active{border-color:var(--acc-1);background:var(--acc-1-soft);color:var(--text)}.learn-controls{display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-5)}.ls{height:42px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:12px;padding:0 12px;cursor:pointer;font-size:14px}html[data-theme=light] .ls{background:#fff}.ls:focus{outline:2px solid var(--acc-1);outline-offset:2px}.learn-tag{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:var(--sp-3)}.learn-q{font-size:20px;line-height:1.45;letter-spacing:-.02em;font-weight:550;margin:var(--sp-3) 0 var(--sp-4);color:var(--text)}.learn-a{display:grid;gap:var(--sp-3)}.qa{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:14px;padding:13px 15px;text-align:left;cursor:pointer;font-size:14.5px;transition:all var(--dur-1) var(--ease-out);width:100%;font-weight:500}html[data-theme=light] .qa{background:#f7f9fd}.qa:hover{border-color:var(--acc-1);transform:translateX(2px)}.qa.correct{border-color:var(--ok);background:var(--ok-soft)}.qa.wrong{border-color:var(--bad);background:var(--bad-soft)}.qh{filter:blur(7px);user-select:none;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:13px 15px;color:var(--text);transition:filter var(--dur-2) var(--ease-out);cursor:pointer}.qh.show{filter:none;cursor:default}.learn-fb{margin-top:var(--sp-4);color:var(--text-2);line-height:1.6;font-size:14.5px;min-height:24px}.learn-fb strong{color:var(--text)}`;
-      document.head.appendChild(s);
-    }
-
-    U.$('#lModules')?.addEventListener('click', e => {
-      const chip = e.target.closest('[data-module]');
-      if (!chip) return;
-      setLearnModule(chip.dataset.module);
-      renderLearnIdleState();
-    });
-    U.$('#lNew').addEventListener('click', nextQ);
-    U.$('#lTopic')?.addEventListener('change', renderLearnIdleState);
-    U.$('#lType')?.addEventListener('change', renderLearnIdleState);
-    U.$('#lShow').addEventListener('click', () => {
-      U.$('#qha')?.classList.add('show');
-      if (_q) U.$('#lFb').innerHTML = (_q.ans ? `<strong>Antwort:</strong> ${U.esc(_q.ans)}. ` : '') + U.esc(_q.e || '');
-    });
-    U.$('#lA').addEventListener('click', e => {
-      const b = e.target.closest('[data-ai]');
-      if (!b || !_q) return;
-      const ok = +b.dataset.ai === _q.c;
-      b.classList.add(ok ? 'correct' : 'wrong');
-      U.$$('#lA [data-ai]').forEach(el => { if (+el.dataset.ai === _q.c) el.classList.add('correct'); el.disabled = true; });
-      U.$('#lFb').innerHTML = `<strong>${ok ? 'Richtig.' : 'Falsch.'}</strong> ${U.esc(_q.e)}`;
-    });
-
-    setLearnModule(selectedModule);
-  }
-  function nextQ() {
-    const moduleId = getLearnModuleFromStore();
-    const t = U.$('#lTopic')?.value || 'all';
-    const ty = U.$('#lType')?.value || 'quiz';
-    const pool = getFilteredQuestions(moduleId, t, ty);
-    if (!pool.length) {
-      renderLearnEmptyState(moduleId);
-      return;
-    }
-    _q = pool[Math.floor(Math.random() * pool.length)];
-    const topic = MODULES.flatMap(m => m.topics).find(topic => topic.id === _q.topic);
-    const topicLabel = topic?.title || _q.topic;
-    const moduleLabel = MODULES.find(m => m.id === _learnTopicToModule.get(_q.topic))?.title;
-    U.$('#lTag').textContent = moduleLabel ? `${moduleLabel} · ${topicLabel}` : topicLabel;
-    U.$('#lQ').textContent = _q.q;
-    U.$('#lFb').innerHTML = '';
-    const ans = U.$('#lA');
-    if (_q.type === 'quiz') ans.innerHTML = _q.a.map((a, i) => `<button class="qa" data-ai="${i}">${U.esc(a)}</button>`).join('');
-    else ans.innerHTML = `<div id="qha" class="qh" onclick="this.classList.add('show')">${U.esc(_q.ans)}</div>`;
-  }
-
-  /* ─ Fortschritt ─ */
-  function progress() {
-    App.setActiveNav('progress');
-    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: 'Fortschritt' }]);
-
-    const cards = MODULES.map(mod => {
-      const pct = Store.moduleProgress(mod.id);
-      const total = mod.topics.reduce((a, t) => a + t.subtopics.length, 0);
-      const done = mod.topics.reduce((a, t) => a + t.subtopics.filter(s => Store.isRead(mod.id, t.id, s.id)).length, 0);
-      return `
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-4);cursor:pointer" onclick="Router.navigate('#/m/${mod.id}')">
-            <div class="module-card__icon" style="width:36px;height:36px;margin-bottom:0">${U.icon(mod.icon)}</div>
-            <h3 style="font-size:16px;font-weight:650;margin:0;letter-spacing:-.02em;flex:1">${U.esc(mod.title)}</h3>
-            <span class="pill pill--${pct === 100 ? 'ok' : 'accent'}">${pct}%</span>
-          </div>
-          ${mod.topics.map(t => {
-            const tp = Store.topicProgress(mod.id, t.id);
-            return `<div style="margin-bottom:var(--sp-3);cursor:pointer" onclick="Router.navigate('#/m/${mod.id}/t/${t.id}')">
-              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-                <span style="color:var(--text-2)">${U.esc(t.title)}</span>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-3)">${tp}%</span>
-              </div>
-              ${U.pb(tp)}
-            </div>`;
-          }).join('')}
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--sp-4);padding-top:var(--sp-3);border-top:1px solid var(--line)">
-            <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-3)">${done} / ${total} gelesen</span>
-            <button class="btn" style="height:32px;padding:0 12px;font-size:12px" onclick="Router.navigate('#/m/${mod.id}')">öffnen ${U.icon('chevron-right')}</button>
-          </div>
-        </div>`;
-    }).join('');
-
-    render(`
-      <section class="hero">
-        <div class="hero__eyebrow">Fortschritt</div>
-        <h1 class="hero__title">Dein <em>Lernstand</em>.</h1>
-        <p class="hero__lead">Fortschritt wird lokal im Browser gespeichert. Jedes geöffnete Unterthema gilt als gelesen.</p>
-        <div class="hero__meta">
-          <span class="pill pill--accent">${Store.getStreak()} Tage Streak</span>
-          <span class="pill">${QUESTIONS.length} Lernfragen</span>
-        </div>
-      </section>
-      <div class="section-head" style="margin-top:var(--sp-8)">
-        <div><h2 class="section-head__title">Module</h2></div>
-        <button class="btn" onclick="if(confirm('Fortschritt wirklich zurücksetzen?')){Store.set('progress',{});location.reload()}">${U.icon('x')} Zurücksetzen</button>
-      </div>
-      <div class="grid grid--${Math.min(MODULES.length, 2)}">${cards}</div>`);
-  }
-
-  return { home, modulesList, moduleView, topicView, subtopicView, fullNotesView, learn, progress };
+    return { home, modulesList, moduleView, topicView, subtopicView };
 })();
 
 /* ── Notes-Layout-Styles (für Hefteinträge im Overlay) ─────────────── */
@@ -845,12 +511,9 @@ const Views = (() => {
 /* ── 11. INIT ─────────────────────────────────────────────────────────── */
 Router.register(/^$/,                                          Views.home);
 Router.register(/^modules$/,                                   Views.modulesList);
-Router.register(/^learn$/,                                     Views.learn);
-Router.register(/^progress$/,                                  Views.progress);
 Router.register(/^m\/([^/]+)$/,                                Views.moduleView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)$/,                    Views.topicView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)\/s\/([^/]+)$/,        Views.subtopicView);
-Router.register(/^m\/([^/]+)\/t\/([^/]+)\/full$/,              Views.fullNotesView);
 
 window.Router = Router;
 window.Views  = Views;

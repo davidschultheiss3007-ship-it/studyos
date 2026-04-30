@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0d14" />
-<meta name="description" content="StudyOS — modulare Lernplattform für Uni-Module. Hefteinträge, Quiz, Full-Content-Modus." />
+<meta name="description" content="StudyOS — modulare Lernplattform für Uni-Module. Semester, Module, Themen und strukturierte Zusammenfassungen." />
 <title>StudyOS · Lernplattform</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -125,14 +125,6 @@
         <span>Module</span>
         <span class="nav__pill" data-count="modules">0</span>
       </a>
-      <a class="nav__item" href="#/learn" data-nav="learn">
-        <svg class="nav__icon"><use href="#i-brain"/></svg>
-        <span>Lernbereich</span>
-      </a>
-      <a class="nav__item" href="#/progress" data-nav="progress">
-        <svg class="nav__icon"><use href="#i-chart"/></svg>
-        <span>Fortschritt</span>
-      </a>
 
       <div class="nav__group-label">Module</div>
       <div class="nav__modules" data-nav-modules>
@@ -223,30 +215,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     FULL CONTENT OVERLAY (Einzelner Hefteintrag Modal)
-     ═══════════════════════════════════════════════════════════════ -->
-<div class="full-overlay" id="full-overlay" data-full role="dialog" aria-modal="true" aria-label="Hefteintrag" hidden>
-  <div class="full-overlay__backdrop" data-full-close></div>
-  <article class="full-overlay__sheet">
-    <header class="full-overlay__head">
-      <div class="full-overlay__meta">
-        <div class="full-overlay__eyebrow" data-full-eyebrow>Hefteintrag</div>
-        <h2 class="full-overlay__title" data-full-title>Titel</h2>
-      </div>
-      <div class="full-overlay__actions">
-        <button class="icon-btn" data-action="print" title="Drucken">
-          <svg><use href="#i-printer"/></svg>
-        </button>
-        <button class="icon-btn" data-full-close title="Schließen">
-          <svg><use href="#i-x"/></svg>
-        </button>
-      </div>
-    </header>
-    <div class="full-overlay__body" data-full-body></div>
-  </article>
-</div>
-
 <!-- NOSCRIPT FALLBACK -->
 <noscript>
   <div style="padding:40px;font-family:system-ui;max-width:640px;margin:10vh auto;background:#141b2b;color:#edf2ff;border-radius:20px">
@@ -256,7 +224,6 @@
 </noscript>
 
 <script src="./data/_registry.js"></script>
-<script src="./modules/risk.js"></script>
 <script src="./modules/asset-management.js"></script>
 <script src="./modules/behavioral-finance.js"></script>
 <script src="./modules/hr.js"></script>
