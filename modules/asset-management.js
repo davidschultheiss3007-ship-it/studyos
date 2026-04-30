@@ -27,6 +27,7 @@ Object.assign(window.FULL_CONTENT, FULL_CONTENT);
 const MODULES = [
   {
     "id": "asset-management",
+    "semester": "semester-04",
     "title": "Asset Management",
     "subtitle": "Lernmodul zu Assetklassen, Portfoliotheorie, Portfoliomanagement, Performanceanalyse, Indizes, aktivem/passivem Management und FinTechs im Asset Management.",
     "icon": "chart",

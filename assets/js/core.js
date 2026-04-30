@@ -17,6 +17,7 @@
 
 /* ── Aliase auf globale Daten (aus data/-Files geladen) ── */
 const MODULES      = window.MODULES;
+const SEMESTERS    = window.SEMESTERS || [];
 
 /* ── 5. STORE ─────────────────────────────────────────────────────────── */
 const Store = (() => {
@@ -67,6 +68,7 @@ const U = {
   icon: (id, cls='') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`,
   pb:   (pct) => `<div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>`,
   find: {
+    semester:(sid) => SEMESTERS.find(s => s.id === sid),
     mod:    (mid) => MODULES.find(m => m.id === mid),
     topic:  (mid, tid) => U.find.mod(mid)?.topics.find(t => t.id === tid),
     sub:    (mid, tid, sid) => U.find.topic(mid, tid)?.subtopics.find(s => s.id === sid)
@@ -126,11 +128,15 @@ const App = (() => {
   /* Sidebar Modules */
   function renderSidebarModules() {
     const el = U.$('[data-nav-modules]'); if (!el) return;
-    el.innerHTML = MODULES.map(m => `
-      <button class="nav__item" data-nav-mod="${m.id}" onclick="Router.navigate('#/m/${m.id}')">
-        <span class="nav__module-dot" style="color:var(--acc-1)"></span>
-        <span>${U.esc(m.title)}</span>
-      </button>`).join('');
+    el.innerHTML = SEMESTERS.map(sem => {
+      const semModules = MODULES.filter(m => m.semester === sem.id);
+      const buttons = semModules.map(m => `
+        <button class="nav__item" data-nav-mod="${m.id}" onclick="Router.navigate('#/m/${m.id}')">
+          <span class="nav__module-dot" style="color:var(--acc-1)"></span>
+          <span>${U.esc(m.title)}</span>
+        </button>`).join('');
+      return `<div class="nav__group-label">${U.esc(sem.title)}</div>${buttons}`;
+    }).join('');
     const cnt = U.$('[data-count="modules"]'); if (cnt) cnt.textContent = MODULES.length;
   }
 
@@ -162,8 +168,12 @@ const App = (() => {
   function buildCmdItems() {
     const items = [
       { l:'Startseite',    sub:'Navigation', ic:'home',    act:()=>Router.navigate('#/') },
+      { l:'Semester',      sub:'Navigation', ic:'layers',  act:()=>Router.navigate('#/semesters') },
       { l:'Module',        sub:'Navigation', ic:'layers',  act:()=>Router.navigate('#/modules') },
     ];
+    SEMESTERS.forEach(sem => {
+      items.push({ l:sem.title, sub:'Semester', ic:'layers', act:()=>Router.navigate(`#/semester/${sem.id}`) });
+    });
     MODULES.forEach(m => {
       items.push({ l:m.title, sub:'Modul', ic:'book', act:()=>Router.navigate(`#/m/${m.id}`) });
       m.topics.forEach(t => {
@@ -221,7 +231,7 @@ const App = (() => {
         U.$('[data-sidebar]')?.classList.remove('is-open');
     });
 
-    [['home','#/'], ['modules','#/modules']].forEach(([k, h]) =>
+    [['home','#/'], ['modules','#/semesters']].forEach(([k, h]) =>
       U.$(`[data-nav="${k}"]`)?.addEventListener('click', e => { e.preventDefault(); Router.navigate(h); }));
 
     U.$('[data-search-input]')?.addEventListener('focus', () => openCmd());
@@ -257,56 +267,69 @@ const Views = (() => {
     App.setBreadcrumb([{ label: 'Startseite' }]);
 
     const totalSubs = MODULES.reduce((a, m) => a + m.topics.reduce((b, t) => b + t.subtopics.length, 0), 0);
-
-    const cards = MODULES.map(m => {
-      const pct = Store.moduleProgress(m.id);
-      const subCount = m.topics.reduce((a, t) => a + t.subtopics.length, 0);
+    const cards = SEMESTERS.map(sem => {
+      const semModules = MODULES.filter(m => m.semester === sem.id);
+      const subCount = semModules.reduce((a,m)=>a+m.topics.reduce((b,t)=>b+t.subtopics.length,0),0);
       return `
-        <article class="module-card" onclick="Router.navigate('#/m/${m.id}')">
-          <div class="module-card__icon">${U.icon(m.icon)}</div>
-          <h3 class="module-card__title">${U.esc(m.title)}</h3>
-          <p class="module-card__desc">${U.esc(m.subtitle)}</p>
-          <div class="module-card__foot">
-            ${U.pb(pct)}
-            <div class="module-card__stat"><span>${m.topics.length} Themen · ${subCount} Unterthemen</span><span>${pct}%</span></div>
-          </div>
+        <article class="module-card" onclick="Router.navigate('#/semester/${sem.id}')">
+          <div class="module-card__icon">${U.icon('layers')}</div>
+          <h3 class="module-card__title">${U.esc(sem.title)}</h3>
+          <p class="module-card__desc">${U.esc(sem.description || '')}</p>
+          <div class="module-card__foot">${U.pb(0)}<div class="module-card__stat"><span>${semModules.length} Module · ${subCount} Unterthemen</span><span>Öffnen</span></div></div>
         </article>`;
     }).join('');
-
-    const placeholders = `
-      <article class="module-card module-card--disabled">
-        <div class="module-card__icon">${U.icon('plus')}</div>
-        <h3 class="module-card__title">Neues Modul</h3>
-        <p class="module-card__desc">Statistik, Marketing, Bilanzierung — als Objekt in MODULES[] ergänzen.</p>
-        <div class="module-card__foot">${U.pb(0)}<div class="module-card__stat"><span>bereit</span><span>0%</span></div></div>
-      </article>
-`;
 
     render(`
       <div class="view--home">
         <section class="hero">
           <div class="hero__eyebrow">StudyOS · v3</div>
-          <h1 class="hero__title">Deine Module. <em>Dein Wissen.</em></h1>
+          <h1 class="hero__title">Deine Semester. <em>Dein Wissen.</em></h1>
           <p class="hero__lead">Eine modulare Lernplattform: Semester, Module, Themen und strukturierte Zusammenfassungen.</p>
           <div class="hero__meta">
-            <span class="pill pill--accent">${MODULES.length} Modul${MODULES.length !== 1 ? 'e' : ''}</span>
+            <span class="pill pill--accent">${SEMESTERS.length} Semester</span>
+            <span class="pill">${MODULES.length} Module</span>
             <span class="pill">${totalSubs} Unterthemen</span>
-            <span class="pill">⌘K Schnellzugriff</span>
           </div>
         </section>
         <div>
           <div class="section-head">
-            <div><h2 class="section-head__title">Module</h2><p class="section-head__sub">Klicke auf ein Modul um in die Themen einzutauchen.</p></div>
+            <div><h2 class="section-head__title">Semester</h2><p class="section-head__sub">Klicke auf ein Semester, um die Module zu sehen.</p></div>
           </div>
-          <div class="grid grid--3">${cards}${placeholders}</div>
+          <div class="grid grid--3">${cards}</div>
         </div>
       </div>`);
+  }
+
+  /* ─ Semester List / Modules List ─ */
+  function semesterView(semesterId) {
+    const semester = U.find.semester(semesterId);
+    if (!semester) { Router.navigate('#/'); return; }
+    App.setActiveNav('modules');
+    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: semester.title }]);
+    const semesterModules = MODULES.filter(m => m.semester === semester.id);
+    const cards = semesterModules.map(m => {
+      const pct = Store.moduleProgress(m.id);
+      return `<article class="module-card" onclick="Router.navigate('#/m/${m.id}')">
+        <div class="module-card__icon">${U.icon(m.icon)}</div>
+        <h3 class="module-card__title">${U.esc(m.title)}</h3>
+        <p class="module-card__desc">${U.esc(m.subtitle)}</p>
+        <div class="module-card__foot">${U.pb(pct)}<div class="module-card__stat"><span>${m.topics.length} Themen</span><span>${pct}%</span></div></div>
+      </article>`;
+    }).join('');
+    render(`
+      <section class="hero">
+        <div class="hero__eyebrow">Semester</div>
+        <h1 class="hero__title">${U.esc(semester.title)}</h1>
+        <p class="hero__lead">${U.esc(semester.description || 'Modulübersicht')}</p>
+      </section>
+      <div class="section-head" style="margin-top:var(--sp-8)"><div><h2 class="section-head__title">Module</h2></div></div>
+      <div class="grid grid--3">${cards}</div>`);
   }
 
   /* ─ Modules List ─ */
   function modulesList() {
     App.setActiveNav('modules');
-    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: 'Module' }]);
+    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: 'Semesterübersicht' }]);
     const cards = MODULES.map(m => {
       const pct = Store.moduleProgress(m.id);
       return `<article class="module-card" onclick="Router.navigate('#/m/${m.id}')">
@@ -331,7 +354,8 @@ const Views = (() => {
     const mod = U.find.mod(mid);
     if (!mod) { Router.navigate('#/'); return; }
     App.setActiveNav(mid);
-    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: mod.title }]);
+    const semester = U.find.semester(mod.semester);
+    App.setBreadcrumb([{ label: 'Startseite', href: '#/' }, { label: semester?.title || 'Semester', href: semester ? `#/semester/${semester.id}` : '#/' }, { label: mod.title }]);
 
     const cards = mod.topics.map((t, i) => {
       const pct = Store.topicProgress(mid, t.id);
@@ -381,6 +405,7 @@ const Views = (() => {
     App.setActiveNav(mid);
     App.setBreadcrumb([
       { label: 'Startseite', href: '#/' },
+      { label: U.find.semester(mod.semester)?.title || 'Semester', href: `#/semester/${mod.semester}` },
       { label: mod.title,    href: `#/m/${mid}` },
       { label: top.title }
     ]);
@@ -429,6 +454,7 @@ const Views = (() => {
     App.setActiveNav(mid);
     App.setBreadcrumb([
       { label: 'Startseite', href: '#/' },
+      { label: U.find.semester(mod.semester)?.title || 'Semester', href: `#/semester/${mod.semester}` },
       { label: mod.title, href: `#/m/${mid}` },
       { label: top.title, href: `#/m/${mid}/t/${tid}` },
       { label: sub.title }
@@ -461,7 +487,7 @@ const Views = (() => {
     Store.markRead(mid, tid, sid);
   }
 
-    return { home, modulesList, moduleView, topicView, subtopicView };
+    return { home, modulesList, semesterView, moduleView, topicView, subtopicView };
 })();
 
 /* ── Notes-Layout-Styles (für Hefteinträge im Overlay) ─────────────── */
@@ -511,6 +537,8 @@ const Views = (() => {
 /* ── 11. INIT ─────────────────────────────────────────────────────────── */
 Router.register(/^$/,                                          Views.home);
 Router.register(/^modules$/,                                   Views.modulesList);
+Router.register(/^semesters$/,                                 Views.home);
+Router.register(/^semester\/([^/]+)$/,                        Views.semesterView);
 Router.register(/^m\/([^/]+)$/,                                Views.moduleView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)$/,                    Views.topicView);
 Router.register(/^m\/([^/]+)\/t\/([^/]+)\/s\/([^/]+)$/,        Views.subtopicView);
