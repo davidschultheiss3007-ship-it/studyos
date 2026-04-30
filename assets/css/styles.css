@@ -1276,6 +1276,33 @@ html[data-theme="light"] .full-overlay__sheet {
 }
 
 
+
+/* ─ Legacy Note Styles (FULL_CONTENT als Datenquelle) ─ */
+.note-page { display: block; }
+.note-page h3, .note-page h4 { margin: 0 0 var(--sp-2); color: var(--text); }
+.note-page p { margin: 0 0 var(--sp-3); color: var(--text-2); }
+.note-page ul, .note-page ol { margin: 0 0 var(--sp-4); padding-left: 1.25rem; color: var(--text-2); }
+.note-callout {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--acc-1);
+  border-radius: var(--r-sm);
+  background: var(--acc-1-soft);
+}
+.note-formula {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  font-family: var(--font-mono);
+}
+.note-table { margin: var(--sp-4) 0; overflow-x: auto; }
+.note-table table { width: 100%; border-collapse: collapse; }
+.note-table th, .note-table td { border: 1px solid var(--line); padding: var(--sp-2) var(--sp-3); text-align: left; }
+.note-table th { background: var(--bg-3); color: var(--text); }
+
 /* ───────────────────────── 9. SKELETON & ANIMATION ───────────────────── */
 
 .skeleton {

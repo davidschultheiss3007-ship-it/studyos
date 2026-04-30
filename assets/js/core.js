@@ -17,6 +17,7 @@
 
 /* ── Aliase auf globale Daten (aus data/-Files geladen) ── */
 const MODULES      = window.MODULES;
+const FULL_CONTENT = window.FULL_CONTENT || {};
 
 /* ── 5. STORE ─────────────────────────────────────────────────────────── */
 const Store = (() => {
@@ -99,6 +100,15 @@ const BlockRenderer = {
     if (Array.isArray(sub.blocks) && sub.blocks.length) {
       return `<div class="notes__body">${this.renderBlocks(sub.blocks)}</div>`;
     }
+
+    if (sub.legacyKey && FULL_CONTENT[sub.legacyKey]) {
+      return `<div class="notes__body note-page">${FULL_CONTENT[sub.legacyKey]}</div>`;
+    }
+
+    if (sub.html) {
+      return `<div class="notes__body note-page">${sub.html}</div>`;
+    }
+
     return `<div class="notes__empty"><p style="color:var(--text-3);font-style:italic">Für dieses Unterthema ist noch kein Inhalt hinterlegt.</p></div>`;
   }
 };
